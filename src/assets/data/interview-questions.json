@@ -7415,6 +7415,237 @@
                           "references":  [
 
                                          ]
+                      },
+                      {
+                          "id":  "Q203",
+                          "title":  "Modernizing a legacy .NET monolith with zero downtime",
+                          "categoryId":  "architecture-distributed-systems",
+                          "tags":  [
+
+                                   ],
+                          "variants":  [
+                                           {
+                                               "wording":  "Q1. Modernizing a 15-year-old .NET enterprise application with zero downtime.",
+                                               "sources":  [
+                                                               "Source: B4"
+                                                           ]
+                                           }
+                                       ],
+                          "sections":  [
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "I would approach this as an incremental modernization initiative rather than a complete rewrite. My primary objectives would be to preserve business functionality, reduce technical debt progressively, and ensure uninterrupted service while the system evolves. The Strangler Fig pattern, Domain-Driven Design, and an Anti-Corruption Layer are central because they let the legacy application and newly developed services coexist safely."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "I would begin with dependency analysis, business workflow discovery, baseline SLAs, and regression tests that capture the critical behaviors of the current system. I would identify bounded contexts such as User Management, Compliance, Notifications, Reporting, and Audit Management, then prioritize modules with clear ownership and fewer dependencies. The reverse proxy or API gateway would route traffic between legacy modules and new ASP.NET Core services, while the legacy database remains available through controlled migration and compatibility layers."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "The hardest part is database modernization. I would separate data ownership by domain, use the Expand-and-Contract pattern for backward-compatible schema changes, and avoid uncontrolled dual writes. Blue-green or canary deployment through Azure App Service or AKS would support zero-downtime cutover, along with feature flags, health checks, and careful rollback planning for write-heavy workflows. I would measure success by maintainability, deployment independence, reliability, and the elimination of legacy risk rather than by how quickly a rewrite happens."
+                                           }
+                                       ],
+                          "references":  [
+                                             "Reference: Strangler Fig pattern and Microsoft modernization guidance"
+                                         ]
+                      },
+                      {
+                          "id":  "Q204",
+                          "title":  "Diagnosing intermittent API latency spikes",
+                          "categoryId":  "production-troubleshooting-leadership",
+                          "tags":  [
+
+                                   ],
+                          "variants":  [
+                                           {
+                                               "wording":  "Q2. A high-traffic ASP.NET Core API experiences intermittent latency spikes despite sufficient infrastructure capacity.",
+                                               "sources":  [
+                                                               "Source: B4"
+                                                           ]
+                                           }
+                                       ],
+                          "sections":  [
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "I would start with production evidence rather than assumptions. I would review latency percentiles, queue depth, CPU, memory, thread count, dependency spans, SQL waits, connection pooling, and downstream HTTP latency. In Azure, Application Insights, Azure Monitor, and OpenTelemetry would help correlate slow requests with actual code paths and infrastructure bottlenecks."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "ThreadPool starvation is a common cause when worker threads are blocked by synchronous calls, locking, or blocking waits. I would look for Task.Wait(), .Result, long lock hold times, rising thread counts, and queue buildup. I would also inspect SQL connection acquisition and database waits because exhausted ADO.NET pools, slow queries, and lock contention often masquerade as infrastructure capacity issues."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "Excessive allocations and GC pause time are another likely contributor, especially with large payloads or repeated object creation. I would validate heap growth, Gen 2 collections, LOH activity, and allocation hot spots before changing hardware or thread settings. The fix would be evidence-based: remove blocking sync-over-async calls, shorten connection lifetimes, optimize queries, reduce allocations, and verify p95 and p99 latency improvement under load."
+                                           }
+                                       ],
+                          "references":  [
+                                             "Further reading: .NET diagnostics, Query Store, and Application Insights"
+                                         ]
+                      },
+                      {
+                          "id":  "Q205",
+                          "title":  "Designing distributed transactions across microservices",
+                          "categoryId":  "architecture-distributed-systems",
+                          "tags":  [
+
+                                   ],
+                          "variants":  [
+                                           {
+                                               "wording":  "Q3. How would you design a distributed transaction workflow across multiple .NET microservices while maintaining consistency, idempotency, and recovery?",
+                                               "sources":  [
+                                                               "Source: B4"
+                                                           ]
+                                           }
+                                       ],
+                          "sections":  [
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "I would not rely on a single ACID transaction across services because each service owns its own database. Instead, I would use the Saga pattern with local transactions, the Transactional Outbox pattern, idempotent message processing, and explicit compensating actions for reversible steps. This yields eventual consistency and better failure recovery than trying to simulate a distributed database transaction."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "For an order flow, the Order service would create a pending order, the Inventory service would reserve stock, the Payment service would authorize funds, and the Shipping service would create the shipment. Each step would commit locally and emit an event or command in the same database transaction via the outbox, while a Saga orchestrator would track progress, retries, and compensation. I would enforce idempotency with unique message IDs and a processed-message table so duplicate events do not re-execute business operations."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "The key design principle is to assume partial failures and duplicate delivery are normal. I would persist the Saga state, use Azure Service Bus or a durable workflow engine, and define clear compensation rules for actions such as inventory release or refund. Success is not atomicity across all services; it is recoverability, observability, and safe retry semantics that preserve critical business invariants."
+                                           }
+                                       ],
+                          "references":  [
+                                             "Further reading: Saga pattern, Transactional Outbox, idempotent consumers"
+                                         ]
+                      },
+                      {
+                          "id":  "Q206",
+                          "title":  "Microservices versus modular monolith",
+                          "categoryId":  "architecture-distributed-systems",
+                          "tags":  [
+
+                                   ],
+                          "variants":  [
+                                           {
+                                               "wording":  "Q4. Your team is debating microservices or a modular monolith. What would you use and why?",
+                                               "sources":  [
+                                                               "Source: B4"
+                                                           ]
+                                           }
+                                       ],
+                          "sections":  [
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "I would not choose microservices just because they are fashionable. The decision should be based on business boundaries, release independence, operational maturity, and the real scaling problem. For many enterprise systems, a well-designed modular monolith is a better initial architecture because it reduces complexity while preserving domain boundaries and local transactions."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "I would evaluate whether the domain naturally separates into independently evolving bounded contexts and whether multiple teams need independent deployment and release cadence. If teams are blocked by coordinated releases or the application is not yet ready for distributed tracing, service ownership, and inter-service contracts, the modular monolith is the lower-risk option. Microservices become valuable when there is clear deployment independence, different scaling profiles, or operational isolation that justifies the extra complexity."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "I would start with Clean Architecture and module boundaries, enforce dependency rules, and only extract services when there is a demonstrated business or engineering need. My goal is to avoid the distributed monolith anti-pattern, where teams keep a shared database and network calls but still have monolithic deployment constraints. A modular monolith can evolve into microservices later, provided the boundaries are real and supported by the organization."
+                                           }
+                                       ],
+                          "references":  [
+                                             "Reference: Modular monolith design and bounded context guidance"
+                                         ]
+                      },
+                      {
+                          "id":  "Q207",
+                          "title":  "Production deployment causing memory leaks and cascading failures",
+                          "categoryId":  "production-troubleshooting-leadership",
+                          "tags":  [
+
+                                   ],
+                          "variants":  [
+                                           {
+                                               "wording":  "Q5. A production deployment introduces memory leaks, increased CPU usage, and cascading failures. How would you diagnose and fix it?",
+                                               "sources":  [
+                                                               "Source: B4"
+                                                           ]
+                                           }
+                                       ],
+                          "sections":  [
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "I would first stabilize the system and contain impact. That means checking the release timing, using the deployment history to isolate the change, and deciding whether to rollback, disable the feature, or route traffic away from the failing path. I would verify database compatibility before a rollback because a code rollback does not necessarily reverse schema changes or data updates."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "Once the system is stable, I would investigate memory and CPU with counters, dumps, and trace data. I would look for singleton retention, static collections, event subscriptions, undisposed resources, and misconfigured dependency lifetimes. For CPU, I would use runtime profiling and dependency traces to see whether a hot loop, retry storm, or database bottleneck is creating the churn."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "I would also add resilience patterns such as timeout, circuit breaker, retry with backoff, and bulkhead isolation so that one failing dependency cannot consume the whole platform. The long-term fix is not just to restart the service; it is to identify the root cause, add regression tests, improve load testing, and strengthen alerting around resource saturation and tail latency."
+                                           }
+                                       ],
+                          "references":  [
+                                             "Further reading: .NET dump analysis, resilience patterns, and production incident response"
+                                         ]
+                      },
+                      {
+                          "id":  "Q208",
+                          "title":  "Enterprise authentication and authorization with OAuth 2.0 and OIDC",
+                          "categoryId":  "security-identity",
+                          "tags":  [
+
+                                   ],
+                          "variants":  [
+                                           {
+                                               "wording":  "Q6. How would you architect enterprise authentication and authorization using OAuth 2.0, OIDC, JWT, managed identities, and centralized secrets management?",
+                                               "sources":  [
+                                                               "Source: B4"
+                                                           ]
+                                           }
+                                       ],
+                          "sections":  [
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "I would design the security model around a centralized identity provider, standards-based protocols, least privilege, and explicit authorization boundaries. In Azure, I would typically use Microsoft Entra ID for user identity, OAuth 2.0 and OpenID Connect for delegated authentication and API access, ASP.NET Core authorization policies for API protection, and Azure Key Vault for secret management. I would treat identity, workload identity, and secrets management as separate concerns rather than one shared credential model."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "For interactive applications, I would use Authorization Code flow with PKCE, and for a browser-heavy Angular app I would consider a backend-for-frontend pattern to manage tokens more securely. The API would validate the JWT signature, issuer, audience, claims, and tenant context, then enforce claims-based or policy-based authorization before data access. For service-to-service calls, I would prefer managed identities and Azure RBAC over long-lived secrets whenever the target platform supports it."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "At the business layer, I would enforce tenant and resource-level authorization because a valid token does not automatically mean the caller can access a specific record or tenant. I would also apply MFA, conditional access, short-lived tokens, certificate rotation, TLS everywhere, and continuous auditing. The end goal is zero trust: every request must be authenticated, authorization must be explicit, and every workload must have only the minimum permissions required."
+                                           }
+                                       ],
+                          "references":  [
+                                             "Reference: Microsoft Entra ID, OAuth 2.0, OpenID Connect, and Azure Key Vault"
+                                         ]
+                      },
+                      {
+                          "id":  "Q209",
+                          "title":  "Establishing engineering standards across .NET teams",
+                          "categoryId":  "production-troubleshooting-leadership",
+                          "tags":  [
+
+                                   ],
+                          "variants":  [
+                                           {
+                                               "wording":  "Q7. How would you establish architecture standards, automated testing, CI/CD practices, and mentoring across multiple .NET teams?",
+                                               "sources":  [
+                                                               "Source: B4"
+                                                           ]
+                                           }
+                                       ],
+                          "sections":  [
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "I would create a common engineering foundation without creating unnecessary governance. My focus would be on architecture standards, reusable templates, automated quality gates, and observability conventions that help teams move fast without introducing inconsistent patterns. Standards would be practical and enforceable: Clean Architecture, dependency injection, secure API patterns, structured logging, API contracts, and testability."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "I would require layered automated testing—unit, integration, contract, and performance checks—so release quality is validated consistently in CI/CD. Pipelines would integrate build verification, analysis, dependency scanning, and progressive deployment with health checks, rollback readiness, and definition of done. To avoid slowing teams down, I would use templates, pull-request guidelines, code-review standards, and ADRs for exceptions rather than heavyweight approval processes for every small change."
+                                           },
+                                           {
+                                               "type":  "paragraph",
+                                               "content":  "Mentoring is essential for long-term consistency. I would review design trade-offs with engineers, support architecture discussions, and help teams connect engineering practices to business outcomes such as delivery speed, maintainability, incident rate, and security posture. The standard is not a document in isolation; it is a workflow that becomes easy to follow because it is automated, observable, and reinforced through team habits."
+                                           }
+                                       ],
+                          "references":  [
+                                             "Further reading: architecture decision records, CI/CD standards, and engineering effectiveness metrics"
+                                         ]
                       }
                   ],
     "conversionNotes":  [
